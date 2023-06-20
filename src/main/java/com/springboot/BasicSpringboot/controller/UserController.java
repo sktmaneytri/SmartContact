@@ -21,8 +21,11 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.security.Principal;
 import java.util.List;
+import java.util.Optional;
 
 import com.springboot.BasicSpringboot.helper.message;
+
+import javax.swing.text.html.Option;
 
 @Controller
 @RequestMapping("/user")
@@ -70,7 +73,7 @@ public class UserController {
 
             //processing and upload file
             if(file.isEmpty()) {
-
+                contact.setImage("contact.png");
             } else {
                 contact.setImage(file.getOriginalFilename());
 
@@ -117,5 +120,45 @@ public class UserController {
         model.addAttribute("currentPage", page);
         model.addAttribute("totalPages", contacts.getTotalPages());
         return "normal/show_contacts";
+    }
+
+    //showing contact detail
+    @GetMapping("{cId}/contact")
+    public String showContactDetail(@PathVariable("cId") Integer cId, Model model, Principal principal) {
+        addCommonData(model, principal);
+
+
+
+
+        Optional<Contact> contactOptional = conRepo.findById(cId);
+        Contact contact = contactOptional.get();
+
+        String username = principal.getName();
+        User user = repo.getUserByUserName(username);
+        if(user.getId()==contact.getUser().getId()) {
+            model.addAttribute("contact", contact);
+            model.addAttribute("title", contact.getName());
+        }
+
+        return "normal/contact_detail";
+    }
+    //delete contact handler
+    @GetMapping("/delete/{cId}")
+    public String deleteContactById(@PathVariable("cId") Integer cId, Model model, Principal principal) {
+        addCommonData(model, principal);
+        Optional<Contact> contactOptional = conRepo.findById(cId);
+        Contact contact = contactOptional.get();
+        contact.setUser(null);
+        //check .. assignment
+        try {
+            conRepo.delete(contact);
+            message message = new message("Contact delete successfully...", "alert-success");
+            model.addAttribute("message", message);
+        } catch ( Exception e) {
+            message message = new message("Something were wrong: " + e.getMessage(), "alert-danger");
+            model.addAttribute("message", message);
+        }
+        model.addAttribute("title", "Contacts Page");
+        return "redirect:/user/contacts/0";
     }
 }
