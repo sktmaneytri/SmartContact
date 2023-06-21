@@ -127,9 +127,6 @@ public class UserController {
     public String showContactDetail(@PathVariable("cId") Integer cId, Model model, Principal principal) {
         addCommonData(model, principal);
 
-
-
-
         Optional<Contact> contactOptional = conRepo.findById(cId);
         Contact contact = contactOptional.get();
 
@@ -147,11 +144,12 @@ public class UserController {
     public String deleteContactById(@PathVariable("cId") Integer cId, Model model, Principal principal) {
         addCommonData(model, principal);
         Optional<Contact> contactOptional = conRepo.findById(cId);
+        User user = repo.getUserByUserName(principal.getName());
         Contact contact = contactOptional.get();
-        contact.setUser(null);
         //check .. assignment
         try {
-            conRepo.delete(contact);
+
+            user.getContacts().remove(contact);
             message message = new message("Contact delete successfully...", "alert-success");
             model.addAttribute("message", message);
         } catch ( Exception e) {
@@ -160,5 +158,62 @@ public class UserController {
         }
         model.addAttribute("title", "Contacts Page");
         return "redirect:/user/contacts/0";
+    }
+
+    //open update form handler
+    @PostMapping("/update-contact/{cId}")
+    public String updateForm(@PathVariable("cId") Integer cId, Model model, Principal principal) {
+        addCommonData(model, principal);
+
+        Optional<Contact> optionalContact = this.conRepo.findById(cId);
+        Contact contact = optionalContact.get();
+        model.addAttribute("title", "Update Contact");
+
+        model.addAttribute("contact", contact);
+        return "normal/update_form";
+    }
+
+    // update contact handler
+    @PostMapping("/process-update")
+    public String updateHandler(@ModelAttribute Contact contact,
+                                @RequestParam("profileImage") MultipartFile file,
+                                Model model,
+                                Principal principal) {
+        try {
+            Contact oldContactDetail = conRepo.findById(contact.getcId()).get();
+                if(!file.isEmpty()) {
+
+                    //delete old photo
+                    File deleteFile = new ClassPathResource("static/img").getFile();
+                    File file1 = new File(deleteFile, oldContactDetail.getImage());
+                    file1.delete();
+
+                    //save
+                    File savedFile =  new ClassPathResource("static/img").getFile();
+                    Path path =   Paths.get(savedFile.getAbsolutePath()+File.separator+file.getOriginalFilename());
+                    Files.copy(file.getInputStream(),path, StandardCopyOption.REPLACE_EXISTING);
+                    contact.setImage(file.getOriginalFilename());
+                }
+                 else {
+                     contact.setImage(oldContactDetail.getImage());
+                }
+
+                User user =  this.repo.getUserByUserName(principal.getName());
+                 contact.setUser(user);
+
+                this.conRepo.save(contact);
+                message message = new message("Your contact is update successfully!", "alert-success");
+                model.addAttribute("message", message);
+
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            message message = new message("Something were wrong: " + e.getMessage(), "alert-danger");
+            model.addAttribute("message", message);
+        }
+        System.out.println("CONTACT NAME: " +contact.getName());
+        System.out.println("CONTACT ID: "+contact.getcId());
+
+        return "redirect:/user/"+contact.getcId()+"/contact";
     }
 }

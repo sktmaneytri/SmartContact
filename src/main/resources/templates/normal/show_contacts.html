@@ -9,8 +9,14 @@
         <div class="card mr-3 ml-3">
             <div class="card-body">
                 <h1 class="text-center">Your Contacts</h1>
+<!--                search-->
+                <div class="search-container my-4">
+                    <input id="search-input" type="text" class="form-control" placeholder="Search your contact.." />
+                        <div class="search-result">
+<!--                                result go here-->
 
-
+                        </div>
+                </div>
 
                 <table class="table table-striped">
                     <thead>
@@ -33,11 +39,14 @@
                             <a href="#" th:href="@{'/user/'+${c.cId}+'/contact'}">
                             <span th:text="${c.email}"></span>
                             </a>
-                        </td>
+                        </td>x
                         <td th:text="${c.phone}">@mdo</td>
                         <td>
                             <a href="#" th:onclick="|deleteContact(${c.cId})|" class="btn btn-danger btn-sm">Delete</a>
-                            <button class="btn btn-primary btn-sm">Edit</button>
+                            <form method="post" th:action="@{'/user/update-contact/'+${c.cId}}" class="mt-2" >
+                                <button type="submit" class="btn btn-primary btn-sm">Edit</button>
+                            </form>
+
                         </td>
 
                     </tr>
